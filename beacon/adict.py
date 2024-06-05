@@ -173,6 +173,13 @@ class ADict(UserDict):
                 data[key] = value
         self.data = data
 
+    def get_value_by_name(self, name):
+        keys = name.split('.')
+        value = self.data
+        for key in keys:
+            value = value[key]
+        return value
+
     @mutate_attribute
     def freeze(self):
         self._frozen = True

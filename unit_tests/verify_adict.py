@@ -191,7 +191,12 @@ class ADictUnitTest(unittest.TestCase):
             user={'age': 20},
             recurrent=True
         )
-        print(type(self.adict_nested.user.address))
+        self.assertIn('country', self.adict_nested.user.address)
+        self.assertEqual(self.adict_nested.user.address.city, 'Texas')
+
+    def test_convert_from_iterables(self):
+        adict_converted = ADict([('Andrew', 'Jackson'), ('John', 'Christopher')])
+        self.assertEqual(adict_converted.Andrew, 'Jackson')
 
 
 if __name__ == "__main__":
