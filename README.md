@@ -324,6 +324,9 @@ Many configuration libraries including `argparse` supports printing manuals for 
 but strong method to write manual. It is almost same with `@scope.observe` but you can put manuals in config instead of 
 values.
 
+If manual is declared in any `Scope`, including `MuitiScope`, then it is displayed when `manual` argument is specified
+to command line.
+
 ```python
 from beacon.scope import Scope, MultiScope
 
@@ -361,10 +364,10 @@ if __name__ == '__main__':
     main()
 ```
 
-Then its output will be:
+Then its manual output will be:
 
 ```shell
-$ python main.py
+$ python main.py manual
 [Scope "config_1"]
 config_1.lr: learning rate.
 [Scope "config_2"]
@@ -403,9 +406,10 @@ if __name__ == '__main__':
     main()
 ```
 
-Then its output is:
+Then its manual output is:
 
 ```shell
+$ python main.py manual
 [External Parser]
 usage: verify_argparse_manual.py [-h] [--batch-size BATCH_SIZE]
 
