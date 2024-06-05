@@ -28,7 +28,7 @@ if __name__ == '__main__':
     main()
 ```
 
-`scope.observe()` is simple python decorator to define presets of configs. Configs can be combined into scope, and
+`@scope.observe()` is simple python decorator to define presets of configs. Configs can be combined into scope, and
 config with higher priority will be merged later. And, if priorities of configs are same, they will be collated 
 in order.
 
@@ -317,3 +317,105 @@ if __name__ == '__main__':
 
 Then `parser.parse_args()` let your arguments merged to your scope. And, of course, it can be mixed with original usage 
 of `Scope`.
+
+
+#### Write Manual
+Many configuration libraries including `argparse` supports printing manuals for each parameter. `@scope.manual` is easy 
+but strong method to write manual. It is almost same with `@scope.observe` but you can put manuals in config instead of 
+values.
+
+```python
+from beacon.scope import Scope, MultiScope
+
+scope_1 = Scope(name='config_1')
+scope_2 = Scope(name='config_2')
+scope = MultiScope(scope_1, scope_2)
+
+
+@scope_1.observe(default=True)
+def default_1(config_1):
+    config_1.lr = 0.1
+
+
+@scope_1.manual
+def default_manual_1(config_1):
+    config_1.lr = 'learning rate.'
+
+
+@scope_2.observe(default=True)
+def default_2(config_2):
+    config_2.batch_size = 16
+
+
+@scope_2.manual
+def default_manual_2(config_2):
+    config_2.batch_size = 'batch size.'
+
+
+@scope
+def main(config_1, config_2):
+    pass
+
+
+if __name__ == '__main__':
+    main()
+```
+
+Then its output will be:
+
+```shell
+$ python main.py
+[Scope "config_1"]
+config_1.lr: learning rate.
+[Scope "config_2"]
+config_2.batch_size: batch size.
+```
+
+Probably you do not want to drop manuals out declared in `argparse`. And do not worry about it, it will be printed too,
+same way as `argparse`.
+
+```python
+from beacon.scope import Scope
+import argparse
+
+scope = Scope(use_external_parser=True)
+parser = argparse.ArgumentParser()
+parser.add_argument('--batch-size', default=16, type=int, help='batch size.')
+
+
+@scope.observe(default=True)
+def default(config):
+    config.lr = 0.1
+
+
+@scope.manual
+def default_manual(config):
+    config.lr = 'learning rate.'
+
+
+@scope
+def main(config):
+    pass
+
+
+if __name__ == '__main__':
+    parser.parse_args()
+    main()
+```
+
+Then its output is:
+
+```shell
+[External Parser]
+usage: verify_argparse_manual.py [-h] [--batch-size BATCH_SIZE]
+
+options:
+  -h, --help            show this help message and exit
+  --batch-size BATCH_SIZE
+                        batch size.
+[Scope "config"]
+lr: learning rate.
+```
+
+Internally, `argparse` is treated as another scope, so note that its parameters are detached from that of your `scope`'s
+when manuals are printed out.

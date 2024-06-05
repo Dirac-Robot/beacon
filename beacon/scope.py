@@ -113,10 +113,9 @@ def patch_parsing_method(func, unknown_external_literals='error'):
         if len(sys.argv) >= 2:
             if sys.argv[1] in ('--help', '-h'):
                 warnings.warn(f'Scope does not support "--help" option. Use "manual" instead.', DeprecationWarning)
-            elif sys.argv[1] == 'manual':
-                print('[Formatted Manuals of External Parser]')
+            if sys.argv[1] in ('--help', '-h', 'manual'):
+                print('[External Parser]')
                 parser.print_help()
-                parser.print_usage()
                 Scope.logging_manual()
                 sys.exit(0)
         known, unknown = func(*args, **kwargs)
@@ -230,14 +229,15 @@ class Scope:
 
     @classmethod
     def logging_manual(cls):
-        for scope in cls.registry:
-            print(f'[Formatted Manuals of Scope "{scope.name}"]')
+        for scope_name, scope in cls.registry.items():
+            print(f'[Scope "{scope_name}"]')
             manuals = scope.manuals
             if len(cls.registry) > 1:
                 manuals = manuals.clone()
                 for key, value in scope.manuals.items():
                     manuals[f'{scope.name}.{key}'] = manuals.pop(key)
             print(manuals.to_xyz())
+        sys.exit(0)
 
     def assign(self, literals):
         if not isinstance(literals, (list, tuple)) or isinstance(literals, str):
@@ -261,6 +261,11 @@ class Scope:
                 self.screen.literals.append(literal)
 
     def apply(self):
+        if len(sys.argv) >= 2:
+            if sys.argv[1] in ('--help', '-h'):
+                warnings.warn(f'Scope does not support "--help" option. Use "manual" instead.', DeprecationWarning)
+            if sys.argv[1] in ('--help', '-h', 'manual'):
+                Scope.logging_manual()
         self.__class__.current_scope = self
         self.screen.views.sort(key=lambda x: self.views[x].priority)
         self.screen.lazy_views.sort(key=lambda x: self.views[x].priority)
@@ -320,7 +325,6 @@ class Scope:
     def exec(self, func):
         @wraps(func)
         def inner(*args, **kwargs):
-            nonlocal self
             with self._recreate_context():
                 args, kwargs = self.get_config_updated_arguments(func, *args, **kwargs)
                 return func(*args, **kwargs)
