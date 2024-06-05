@@ -1,3 +1,4 @@
+import uuid
 from itertools import product
 
 import numpy as np
@@ -5,17 +6,37 @@ import numpy as np
 from beacon.adict import ADict
 
 
-class HyperBand:
-    def __init__(self, scope, space_config, tracker):
+class HyperOpt:
+    def __init__(self, scope, space_config, tracker, mode='max'):
         self.scope = scope
         self.enabled_params = set(scope.config.keys())
         self.space_config = space_config
         self.config = scope.config.clone()
-        self.candidates = []
-        self.set_candidates()
         self.tracker = tracker
+        self.mode = mode
+        self.add_hyperopt_id()
 
-    def set_candidates(self):
+    def add_hyperopt_id(self):
+        self.config.__hyperopt_id__ = str(uuid.uuid4())
+
+
+class DistributedHyperOpt(HyperOpt):
+    def __init__(self, scope, space_config, tracker, backend='pytorch', mode='max'):
+        super().__init__(scope, space_config, tracker, mode)
+        self.init_distributed(backend)
+
+    def init_distributed(self, backend):
+
+
+class HyperBand(HyperOpt):
+    def __init__(self, scope, space_config, tracker, mode='max'):
+        super().__init__(scope, space_config, tracker, mode)
+        self.distributions = []
+        self.superiors = []
+        self.inferiors = []
+        self.init_distributions()
+
+    def init_distributions(self):
         sampling_spaces = ADict()
         for param_name, space_info in self.space_config.items():
             if param_name not in self.enabled_params:
@@ -35,4 +56,12 @@ class HyperBand:
                 raise ValueError(f'Unknown param_type for parameter {param_name}; {param_type}')
             sampling_spaces[param_name] = optim_space
         grid_space = [ADict(zip(sampling_spaces.keys(), values)) for values in product(*sampling_spaces.values())]
-        self.candidates = [ADict(**self.config).update(partial_config) for partial_config in grid_space]
+        self.distributions = [
+            ADict(**self.config).update(**partial_config)
+            for index, partial_config in enumerate(grid_space)
+        ]
+
+    def submit(self, config, metric):
+        config.__metric__ = metric
+        self.tracker.write()
+

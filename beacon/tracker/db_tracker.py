@@ -52,8 +52,8 @@ class DBTracker:
 
     def set_new_index(self, key):
         index_create_op = [
-            self.r.table(self._cluster_id).index_create('structural_hash'),
-            self.r.table(self._cluster_id).index_wait('structural_hash')
+            self.r.table(self._cluster_id).index_create(key),
+            self.r.table(self._cluster_id).index_wait(key)
         ]
         self.r.table(self._cluster_id).index_list().contains(key).not_().branch(index_create_op, None).run(self.rc)
 
@@ -89,6 +89,10 @@ class DBTracker:
 
     def get(self, key):
         return self.r.table(self._cluster_id).get(self._tracker_id)[key].run(self.rc)
+
+    def find_similar_experiments(self, config):
+        structural_hash = config.get_structural_hash()
+        return self.find_by_structural_hash(structural_hash)
 
     def find_by_structural_hash(self, structural_hash):
         return self.r.table(self._cluster_id).get_all(structural_hash, index='structural_hash').run(self.rc)

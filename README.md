@@ -104,6 +104,9 @@ if __name__ == '__main__':
 If you want to use config without wrapping functions with `@scope`, you must execute `scope.apply()` first. It applies 
 all configs to scope manually, including configs and python literals declared from CLI.
 
+Priorities enforce the applying order of configurations, and you can prevent your experiments from mistakes come from
+complicated configuration structure.
+
 ---
 
 #### Define Type of Configs
