@@ -265,14 +265,14 @@ class ADict(UserDict):
             elif ext == '.xyz':
                 return cls(xyz.load(path))
             elif ext == '.py':
-                return cls(cls.from_python(path))
+                return cls(cls.compile_from_file(path))
             else:
                 raise ValueError(f'{ext} is not a valid file extension.')
         else:
             raise FileNotFoundError(f'{path} does not exist.')
 
     @classmethod
-    def from_python(cls, path):
+    def compile_from_file(cls, path):
         config_name = os.path.splitext(os.path.basename(path))[0]
         spec = importlib.util.spec_from_file_location(config_name, path)
         config_module = importlib.util.module_from_spec(spec)
@@ -328,7 +328,7 @@ class ADict(UserDict):
             elif ext == '.xyz':
                 self.data = xyz.load(path)
             elif ext == '.py':
-                self.data = self.from_python(path).to_dict()
+                self.data = self.compile_from_file(path).to_dict()
             else:
                 raise ValueError(f'{ext} is not a valid file extension.')
         else:

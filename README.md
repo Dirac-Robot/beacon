@@ -1,5 +1,9 @@
-### Scope Tutorial
-Scope is tool to manage configurations for various experiments easily.
+# Beacon
+Beacon is collections of useful tools to manage various experiments easily.
+
+### Scope
+Configurations can bother experiments when it is not carefully managed. Scope decreases potentials of mistakes on 
+setup experiments or reproducing previous results.
 
 #### Assign Custom Configs to Scope
 ```python
@@ -25,7 +29,8 @@ if __name__ == '__main__':
 ```
 
 `scope.observe()` is simple python decorator to define presets of configs. Configs can be combined into scope, and
-config with higher priority will be merged later. And, if priorities of configs are same,
+config with higher priority will be merged later. And, if priorities of configs are same, they will be collated 
+in order.
 
 Customized configs or python literals can be defined via CLI environment also.
 
@@ -33,8 +38,8 @@ Customized configs or python literals can be defined via CLI environment also.
 python train.py config_1 config_2 lr=0.01 model.backbone.type=\'ResNet50\' model.backbone.embed_dims=128 model.backbone.depths=[2, 2, 18, 2]
 ```
 
-For convenience, python literals defined via CLI always have highest priorities. Do not forget to wrap strings by quotes 
-with escape(\' or \"), or bash automatically removes all quotes from arguments.
+For convenience, python literals defined via CLI always have the highest priorities. 
+Do not forget to wrap strings by quotes with escape(\' or \"), or bash automatically removes all quotes from arguments.
 
 ---
 
@@ -185,6 +190,11 @@ unexpected accidents.
 ---
 
 ### Advanced Usages
+Decorating your functions with `Scope` is very convenient, but it may harm to implement clean codes. For instance,
+if some people does not want to use existing `Scope`, but their own `Scope` instead,
+pre-implemented decorators frustrate them. But the main motto of `beacon` is 
+"Do not bother essential things with trivial things". So, you can easily override `Scope` or use multiple `Scope`'s in your codes. 
+
 #### Override
 If existing codes are wrapped with another scope, it can be overridden using `Scope.override`. It is class-method to
 assign new scope suppressing error if its name is already defined in global registry.
