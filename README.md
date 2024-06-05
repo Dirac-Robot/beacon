@@ -32,6 +32,46 @@ if __name__ == '__main__':
 config with higher priority will be merged later. And, if priorities of configs are same, they will be collated 
 in order.
 
+```python
+# run.py
+
+from beacon.scope import Scope
+
+scope = Scope()
+
+
+@scope.observe()  # priority == 0 if it is not specified
+def normal_config(config):
+    config.alpha = 0
+
+
+@scope.observe(priority=1)
+def important_config(config):
+    config.alpha = 1
+
+
+@scope.observe(priority=2)
+def most_important_config(config):
+    config.alpha = 2
+
+
+@scope
+def main(config):
+    print(config.alpha)
+
+
+if __name__ == '__main__':
+    main()
+```
+
+Then observed configurations will be collated reversed order of priorities.
+
+```shell
+python train.py normal_config  # 0
+python train.py normal_config important_config  # 1
+python train.py normal_config important_config most_important_config  # 2
+```
+
 Customized configs or python literals can be defined via CLI environment also.
 
 ```shell
@@ -102,7 +142,7 @@ if __name__ == '__main__':
 # CLI
 
 python run.py  # 0
-python run.py my_config  # alpha == 0.1
+python run.py my_config  # 0.1
 ```
 
 It will be useful when some parameters are frequently used while you do not want to fix them manually.
