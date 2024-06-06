@@ -447,7 +447,7 @@ search_spaces = ADict(
     model_type=ADict(param_type='CATEGORY', categories=('resnet50', 'resnet101', 'swin_s'))
 )
 # halving_rate means surviving rate from successors
-# If the number of next experiments decreases under num_min_samples, it is terminated and return config with maximum
+# If the number of next experiments decreases under num_min_samples, it is terminated and return config with best result
 # mode determines how to sort metrics
 hyperband = HyperBand(scope, search_spaces, halving_rate=0.3, num_min_samples=4, mode='max')
 
@@ -485,3 +485,5 @@ hyperband = HyperBand(scope, search_spaces, halving_rate=0.3, num_min_samples=4,
 max_steps = 120000
 print(hyperband.compute_optimized_initial_training_steps(max_steps))  # [27, 88, 292, 972, 3240, 10800, 36000, 120000]
 ```
+
+In the future, distributed hyperband and some other HyperOpt algorithms like BOHB will be added soon.
