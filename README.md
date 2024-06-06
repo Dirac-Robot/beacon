@@ -462,3 +462,26 @@ if __name__ == '__main__':
     results = main()
     print(results.config)
 ```
+
+If you do not want to determine the number of steps to early-stopping manually, 
+`compute_optimized_initial_training_steps` method may be helpful. It computes the number of steps for each generation
+of Hyperband algorithm automatically.
+
+```python
+from beacon.adict import ADict
+from beacon.hyperopt.hyperband import HyperBand
+from beacon.scope import Scope
+
+scope = Scope()
+search_spaces = ADict(
+    lr=ADict(param_type='FLOAT', param_range=(0.0001, 0.1), num_samples=10, space_type='LOG'),
+    batch_size=ADict(param_type='INTEGER', param_range=(1, 64), num_samples=7,  space_type='LOG'),
+    model_type=ADict(param_type='CATEGORY', categories=('resnet50', 'resnet101', 'swin_s'))
+)
+# halving_rate means surviving rate from successors
+# If the number of next experiments decreases under num_min_samples, it is terminated and return config with maximum
+# mode determines how to sort metrics
+hyperband = HyperBand(scope, search_spaces, halving_rate=0.3, num_min_samples=4, mode='max')
+max_steps = 120000
+print(hyperband.compute_optimized_initial_training_steps(max_steps))  # [48, 160, 534, 1778, 5926, 19753, 65843, 120000]
+```

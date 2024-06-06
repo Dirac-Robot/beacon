@@ -142,14 +142,19 @@ class GridSpaceMixIn:
 
 class HyperBand(HyperOpt, GridSpaceMixIn):
     def __init__(self, scope, search_spaces, halving_rate, num_min_samples, tracker=None, mode='max'):
+        if halving_rate <= 0 or halving_rate >= 1:
+            raise ValueError(f'halving_rate must be greater than 0.0 but less than 1.0, but got {halving_rate}.')
+        if num_min_samples < 1:
+            raise ValueError(f'num_min_samples must be greater than or equal to 1, but got {num_min_samples}.')
         super().__init__(scope, search_spaces, tracker, mode)
         self.halving_rate = halving_rate
         self.num_min_samples = num_min_samples
+        self.distributions = self.prepare_distributions(self.config, self.enabled_params, self.search_spaces)
 
     def main(self, func):
         def launch(*args, **kwargs):
             logs = []
-            distributions = self.prepare_distributions(self.config, self.enabled_params, self.search_spaces)
+            distributions = self.distributions
             while len(distributions) >= self.num_min_samples:
                 results = self.estimate(func, distributions, *args, **kwargs)
                 results.sort(key=lambda item: item.__metric__, reverse=self.mode == 'max')
@@ -170,6 +175,16 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
             config.__metric__ = metric
             results.append(config)
         return results
+
+    def compute_optimized_initial_training_steps(self, max_steps):
+        max_size = len(self.distributions)
+        min_size = self.num_min_samples
+        num_generations = math.log(max_size)-math.log(min_size)/math.log(self.halving_rate)
+        min_steps = max_steps*math.pow(self.halving_rate, num_generations)
+        return [
+            *(math.ceil(min_steps/math.pow(self.halving_rate, index)) for index in range(math.ceil(num_generations))),
+            max_steps
+        ]
 
 
 class DistributedHyperBand(DistributedMixIn, HyperBand, GridSpaceMixIn):
