@@ -425,7 +425,7 @@ Internally, `argparse` is treated as another scope, so note that its parameters 
 when manuals are printed out.
 
 ### Experimental Features
-### Hyperparameter Optimization via Hyperband
+#### Hyperparameter Optimization via Hyperband
 It is experimental feature.
 
 With `Scope`, you can use hyperparameter optimization algorithms. `HyperBand` is class for feed hyperparameters 
@@ -441,6 +441,7 @@ from beacon.hyperopt.hyperband import HyperBand
 from beacon.scope import Scope
 
 scope = Scope()
+# define configurations of hyperparameters to search
 search_spaces = ADict(
     lr=ADict(param_type='FLOAT', param_range=(0.0001, 0.1), num_samples=10, space_type='LOG'),
     batch_size=ADict(param_type='INTEGER', param_range=(1, 64), num_samples=7,  space_type='LOG'),
