@@ -206,7 +206,7 @@ def dumps(obj, format_dict=None):
 
 
 def dump(obj, path_or_file, format_dict=None):
-    if isinstance(path_or_file, os.PathLike):
+    if isinstance(path_or_file, (str, os.PathLike)):
         with open(path_or_file, 'w') as f:
             f.write(dumps(obj, format_dict=format_dict))
     else:

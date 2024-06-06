@@ -356,7 +356,7 @@ class ADict(UserDict):
             with open(path, 'r') as f:
                 return json.dump(self.to_dict(), f)
         elif ext == '.xyz':
-            return xyz.dump(self, path)
+            return xyz.dump(self.to_dict(), path)
         else:
             raise ValueError(f'{ext} is not a valid file extension.')
 
