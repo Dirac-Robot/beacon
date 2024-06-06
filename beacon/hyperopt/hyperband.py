@@ -164,17 +164,23 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
                     config.__num_halved__ += 1
                     distributions.append(config)
             best_config = logs[-1][0]
-            return ADict(config=best_config, metric=best_config.__metric__, logs=logs)
+            metric = self.estimate_single_run(func, best_config, *args, **kwargs)
+            logs.append([best_config])
+            return ADict(config=best_config, metric=metric, logs=logs)
         return launch
 
     def estimate(self, estimator, distributions, *args, **kwargs):
         results = []
         for config in distributions:
             self.scope.config = config
-            metric = self.scope(estimator)(*args, **kwargs)
+            metric = self.estimate_single_run(estimator, config, *args, **kwargs)
             config.__metric__ = metric
             results.append(config)
         return results
+
+    def estimate_single_run(self, estimator, config, *args, **kwargs):
+        self.scope.config = config
+        return self.scope(estimator)(*args, **kwargs)
 
     def compute_optimized_initial_training_steps(self, max_steps):
         max_size = len(self.distributions)
