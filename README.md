@@ -425,3 +425,40 @@ Internally, `argparse` is treated as another scope, so note that its parameters 
 when manuals are printed out.
 
 ### Experimental Features
+### Hyperparameter Optimization via Hyperband
+It is experimental feature.
+
+With `Scope`, you can use hyperparameter optimization algorithms. `HyperBand` is class for feed hyperparameters 
+to search via scope.
+
+Hyperband algorithm uses successive halving algorithms and early-stopping mechanisms. As `Scope` cannot adjust your
+experiments directly, it feeds hidden parameter, `__num_halved__`, to your config. You can use this to adjust the number
+of steps to apply early-stopping.
+
+```python
+from beacon.adict import ADict
+from beacon.hyperopt.hyperband import HyperBand
+from beacon.scope import Scope
+
+scope = Scope()
+search_spaces = ADict(
+    lr=ADict(param_type='FLOAT', param_range=(0.0001, 0.1), num_samples=10, space_type='LOG'),
+    batch_size=ADict(param_type='INTEGER', param_range=(1, 64), num_samples=7,  space_type='LOG'),
+    model_type=ADict(param_type='CATEGORY', categories=('resnet50', 'resnet101', 'swin_s'))
+)
+# halving_rate means surviving rate from successors
+# If the number of next experiments decreases under num_min_samples, it is terminated and return config with maximum
+# mode determines how to sort metrics
+hyperband = HyperBand(scope, search_spaces, halving_rate=0.3, num_min_samples=4, mode='max')
+
+
+@hyperband.main
+def main(config):
+    metric = ...  # some metric that you want to optimize
+    return metric
+
+
+if __name__ == '__main__':
+    results = main()
+    print(results.config)
+```
