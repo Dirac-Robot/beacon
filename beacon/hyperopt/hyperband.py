@@ -179,10 +179,10 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
     def compute_optimized_initial_training_steps(self, max_steps):
         max_size = len(self.distributions)
         min_size = self.num_min_samples
-        num_generations = math.log(max_size)-math.log(min_size)/math.log(self.halving_rate)
+        num_generations = math.ceil(math.log(max_size)-math.log(min_size)/math.log(self.halving_rate))
         min_steps = max_steps*math.pow(self.halving_rate, num_generations)
         return [
-            *(math.ceil(min_steps/math.pow(self.halving_rate, index)) for index in range(math.ceil(num_generations))),
+            *(math.ceil(min_steps/math.pow(self.halving_rate, index)) for index in range(num_generations)),
             max_steps
         ]
 

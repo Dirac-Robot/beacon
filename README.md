@@ -483,5 +483,5 @@ search_spaces = ADict(
 # mode determines how to sort metrics
 hyperband = HyperBand(scope, search_spaces, halving_rate=0.3, num_min_samples=4, mode='max')
 max_steps = 120000
-print(hyperband.compute_optimized_initial_training_steps(max_steps))  # [48, 160, 534, 1778, 5926, 19753, 65843, 120000]
+print(hyperband.compute_optimized_initial_training_steps(max_steps))  # [27, 88, 292, 972, 3240, 10800, 36000, 120000]
 ```
