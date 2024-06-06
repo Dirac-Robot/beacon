@@ -7,3 +7,4 @@ def is_seq(x):
 
 def get_all(iterable, key):
     return map(lambda x: x[key], iterable)
+

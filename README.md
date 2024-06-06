@@ -423,3 +423,5 @@ lr: learning rate.
 
 Internally, `argparse` is treated as another scope, so note that its parameters are detached from that of your `scope`'s
 when manuals are printed out.
+
+### Experimental Features

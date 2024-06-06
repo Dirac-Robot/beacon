@@ -1,16 +1,22 @@
+import math
 import uuid
-from itertools import product
+from itertools import product, chain
 
 import numpy as np
 
 from beacon.adict import ADict
+import torch.distributed as dist
+
+from copy import deepcopy as dcp
 
 
 class HyperOpt:
-    def __init__(self, scope, space_config, tracker, mode='max'):
+    def __init__(self, scope, search_spaces, tracker=None, mode='max'):
+        if mode not in ('min', 'max'):
+            raise ValueError('mode must be either "min" or "max".')
         self.scope = scope
-        self.enabled_params = set(scope.config.keys())
-        self.space_config = space_config
+        self.enabled_params = set(search_spaces.keys())
+        self.search_spaces = search_spaces
         self.config = scope.config.clone()
         self.tracker = tracker
         self.mode = mode
@@ -19,49 +25,173 @@ class HyperOpt:
     def add_hyperopt_id(self):
         self.config.__hyperopt_id__ = str(uuid.uuid4())
 
+    def main(self, func):
+        raise NotImplementedError()
+
 
 class DistributedHyperOpt(HyperOpt):
-    def __init__(self, scope, space_config, tracker, backend='pytorch', mode='max'):
-        super().__init__(scope, space_config, tracker, mode)
-        self.init_distributed(backend)
+    def __init__(self, scope, search_spaces, tracker=None, mode='max', rank=0, world_size=1, backend='pytorch'):
+        self.rank = rank
+        self.world_size = world_size
+        self.backend = backend
+        super().__init__(scope, search_spaces, tracker, mode)
 
-    def init_distributed(self, backend):
+    @property
+    def is_root(self):
+        return self.rank == 0
+
+    def add_hyperopt_id(self):
+        self.config.__hyperopt_id__ = self.broadcast_object_from_root(str(uuid.uuid4()))
+
+    def broadcast_object_from_root(self, obj):
+        if self.backend == 'pytorch':
+            obj = [obj]
+            dist.broadcast_object_list(obj)
+            obj = obj[0]
+        else:
+            raise ValueError(f'Unsupported backend: {self.backend}')
+        return obj
+
+    def all_gather_object(self, obj):
+        if self.backend == 'pytorch':
+            gathered_objects = [None for _ in range(self.world_size)]
+            dist.all_gather_object(gathered_objects, obj)
+        else:
+            raise ValueError(f'Unsupported backend: {self.backend}')
+        return gathered_objects
 
 
-class HyperBand(HyperOpt):
-    def __init__(self, scope, space_config, tracker, mode='max'):
-        super().__init__(scope, space_config, tracker, mode)
-        self.distributions = []
-        self.superiors = []
-        self.inferiors = []
-        self.init_distributions()
-
-    def init_distributions(self):
+class GridSpaceMixIn:
+    @classmethod
+    def prepare_distributions(cls, base_config, enabled_params, search_spaces):
         sampling_spaces = ADict()
-        for param_name, space_info in self.space_config.items():
-            if param_name not in self.enabled_params:
+        for param_name, search_space in search_spaces.items():
+            if param_name not in enabled_params:
                 raise KeyError(f'Parameter {param_name} is not defined at scope.')
-            if 'param_type' not in space_info:
-                raise KeyError(f'param_type for parameter {param_name} is not defined at space_config.')
-            param_type = space_info['param_type'].upper()
+            if 'param_type' not in search_space:
+                raise KeyError(f'param_type for parameter {param_name} is not defined at search_spaces.')
+            param_type = search_space['param_type'].upper()
             if param_type == 'INTEGER':
-                start, end = space_info.param_range
-                optim_space = list(range(start, end, space_info.interval))
+                start, stop = search_space.param_range
+                space_type = search_space.get('space_type', 'LINEAR')
+                if space_type == 'LINEAR':
+                    optim_space = np.linspace(
+                        start=start,
+                        stop=stop,
+                        num=search_space.num_samples,
+                        dtype=np.int64
+                    )
+                elif space_type == 'LOG':
+                    base = search_space.get('base', 2)
+                    optim_space = np.logspace(
+                        start=math.log(start, base),
+                        stop=math.log(stop, base),
+                        num=search_space.num_samples,
+                        dtype=np.int64,
+                        base=base
+                    )
+                else:
+                    raise ValueError(f'Invalid space_type: {space_type}')
             elif param_type == 'FLOAT':
-                start, end = space_info.param_range
-                optim_space = np.linspace(start, end, space_info.max_num_values)
+                start, stop = search_space.param_range
+                space_type = search_space.get('space_type', 'LINEAR')
+                if space_type == 'LINEAR':
+                    optim_space = np.linspace(
+                        start=start,
+                        stop=stop,
+                        num=search_space.num_samples,
+                        dtype=np.float32
+                    )
+                elif space_type == 'LOG':
+                    base = search_space.get('base', 10)
+                    optim_space = np.logspace(
+                        start=math.log(start, base),
+                        stop=math.log(stop, base),
+                        num=search_space.num_samples,
+                        dtype=np.float32,
+                        base=base
+                    )
+                else:
+                    raise ValueError(f'Invalid space_type: {space_type}')
             elif param_type == 'CATEGORY':
-                optim_space = space_info.categories
+                optim_space = search_space.categories
             else:
                 raise ValueError(f'Unknown param_type for parameter {param_name}; {param_type}')
             sampling_spaces[param_name] = optim_space
         grid_space = [ADict(zip(sampling_spaces.keys(), values)) for values in product(*sampling_spaces.values())]
-        self.distributions = [
-            ADict(**self.config).update(**partial_config)
+        distributions = [
+            dcp(base_config).update(**partial_config, num_halved=0)
             for index, partial_config in enumerate(grid_space)
         ]
+        return distributions
 
-    def submit(self, config, metric):
-        config.__metric__ = metric
-        self.tracker.write()
+
+class HyperBand(HyperOpt, GridSpaceMixIn):
+    def __init__(self, scope, search_spaces, halving_rate, num_min_samples, tracker=None, mode='max'):
+        super().__init__(scope, search_spaces, tracker, mode)
+        self.halving_rate = halving_rate
+        self.num_min_samples = num_min_samples
+
+    def main(self, func):
+        def launch(*args, **kwargs):
+            logs = []
+            distributions = self.prepare_distributions(self.config, self.enabled_params, self.search_spaces)
+            while len(distributions) >= self.num_min_samples:
+                results = []
+                for config in distributions:
+                    self.scope.config = config
+                    metric = self.scope(func)(*args, **kwargs)
+                    config.__metric__ = metric
+                    results.append(config)
+                distributions = []
+                results.sort(key=lambda item: item.__metric__, reverse=self.mode == 'max')
+                logs.append(results)
+                for config in results[:int(len(results)*self.halving_rate)]:
+                    config.num_halved += 1
+                    distributions.append(config)
+            best_config = logs[-1][0]
+            return ADict(config=best_config, metric=best_config.__metric__, logs=logs)
+        return launch
+
+
+class DistributedHyperBand(DistributedHyperOpt, GridSpaceMixIn):
+    def __init__(
+        self,
+        scope,
+        search_spaces,
+        halving_rate,
+        num_min_samples,
+        tracker=None,
+        mode='max',
+        rank=0,
+        world_size=1,
+        backend='pytorch'
+    ):
+        DistributedHyperOpt.__init__(self, scope, search_spaces, tracker, mode, rank, world_size, backend)
+        self.halving_rate = halving_rate
+        self.num_min_samples = num_min_samples
+
+    def main(self, func):
+        def launch(*args, **kwargs):
+            logs = []
+            distributions = self.prepare_distributions(self.config, self.enabled_params, self.search_spaces)
+            while len(distributions) >= self.num_min_samples:
+                batch_size = math.ceil(len(distributions)/self.world_size)
+                distributions = distributions[self.rank*batch_size:(self.rank+1)*batch_size]
+                results = []
+                for config in distributions:
+                    self.scope.config = config
+                    metric = self.scope(func)(*args, **kwargs)
+                    config.__metric__ = metric
+                    results.append(config)
+                distributions = []
+                results = list(chain(*self.all_gather_object(results)))
+                results.sort(key=lambda item: item.__metric__, reverse=self.mode == 'max')
+                logs.append(results)
+                for config in results[:int(len(results)*self.halving_rate)]:
+                    config.num_halved += 1
+                    distributions.append(config)
+            best_config = logs[-1][0]
+            return ADict(config=best_config, metric=best_config.__metric__, logs=logs)
+        return launch
 
