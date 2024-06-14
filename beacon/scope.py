@@ -175,7 +175,7 @@ class Scope:
         external_priority=-2,
         enable_override=False
     ):
-        self.config = config or ADict()
+        self.config = ADict() if config is None else config
         self.name = name
         self.use_external_parser = use_external_parser
         self.enable_override = enable_override

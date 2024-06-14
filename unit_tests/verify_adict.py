@@ -40,6 +40,16 @@ class ADictUnitTest(unittest.TestCase):
         ADict(self.simple_dict)
         ADict(self.nested_dict)
 
+    def test_default(self):
+        def auto_nested_config():
+            return ADict(default=auto_nested_config)
+        config = auto_nested_config()
+        config.plan.alpha.beta.gamma = 0
+        self.assertEqual(config.plan.alpha.beta.gamma, 0)
+        self.assertIsInstance(config.plan, ADict)
+        self.assertIsInstance(config.plan.alpha, ADict)
+        self.assertIsInstance(config.plan.alpha.beta, ADict)
+
     def test_initialize_from_kwargs(self):
         ADict(**self.simple_dict)
         ADict(**self.nested_dict)
