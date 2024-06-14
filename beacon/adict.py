@@ -3,14 +3,14 @@ import importlib.util
 import json
 import sys
 import types
+from collections.abc import MutableMapping as GenericMapping
 
 import yaml
 import os
-from collections import UserDict
 from copy import deepcopy as dcp
 from functools import wraps
 from types import MappingProxyType
-from typing import MutableMapping, Mapping, Callable
+from typing import Mapping, MutableMapping, Callable
 
 from beacon import xyz
 
@@ -27,7 +27,91 @@ def mutate_attribute(fn):
     return decorator
 
 
-class ADict(UserDict):
+class Dict(GenericMapping):
+    def __init__(self, mapping=None, /, **kwargs):
+        self._data = dict()
+        if mapping is not None:
+            self.update(mapping)
+        if kwargs:
+            self.update(kwargs)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, key):
+        if key in self._data:
+            return self._data[key]
+        if hasattr(self.__class__, "__missing__"):
+            return self.__class__.__missing__(self, key)
+        raise KeyError(key)
+
+    def __setitem__(self, key, item):
+        self._data[key] = item
+
+    def __delitem__(self, key):
+        del self._data[key]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    # Modify __contains__ to work correctly when __missing__ is present
+    def __contains__(self, key):
+        return key in self._data
+
+    # Now, add the methods in dicts but not in MutableMapping
+    def __repr__(self):
+        return repr(self._data)
+
+    def __or__(self, other):
+        if isinstance(other, Dict):
+            return self.__class__(self._data | other._data)
+        if isinstance(other, dict):
+            return self.__class__(self._data | other)
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, Dict):
+            return self.__class__(other._data | self._data)
+        if isinstance(other, dict):
+            return self.__class__(other | self._data)
+        return NotImplemented
+
+    def __ior__(self, other):
+        if isinstance(other, Dict):
+            self._data |= other._data
+        else:
+            self._data |= other
+        return self
+
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["_data"] = self.__dict__["_data"].copy()
+        return inst
+
+    def copy(self):
+        if self.__class__ is Dict:
+            return Dict(self._data.copy())
+        import copy
+        data = self._data
+        try:
+            self._data = dict()
+            c = copy.copy(self)
+        finally:
+            self._data = data
+        c.update(self)
+        return c
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+
+
+class ADict(Dict):
     @mutate_attribute
     def __init__(self, *args, **kwargs):
         if 'default' in kwargs:
@@ -56,11 +140,11 @@ class ADict(UserDict):
 
     def __getitem__(self, names):
         if isinstance(names, str):
-            if names in self.data:
-                value = self.data[names]
+            if names in self._data:
+                value = self._data[names]
             elif self._is_default_defined:
                 value = self.get_default()
-                self.data[names] = value
+                self._data[names] = value
             else:
                 raise KeyError(f'The key "{names}" does not exist.')
         else:
@@ -109,7 +193,7 @@ class ADict(UserDict):
                 self.__delitem__(name)
 
     def __deepcopy__(self, memo=None):
-        mappings = dcp(self.data)
+        mappings = dcp(self._data)
         kwargs = dict()
         if self._is_default_defined:
             kwargs.update(default=self._default)
@@ -122,7 +206,7 @@ class ADict(UserDict):
 
     @mutate_attribute
     def __setstate__(self, state):
-        self.data = state.pop('data')
+        self._data = state.pop('_data')
         for k, v in state.items():
             object.__setattr__(self, k, v)
 
@@ -171,11 +255,11 @@ class ADict(UserDict):
         for key, value in self.items():
             if fn(key, value):
                 data[key] = value
-        self.data = data
+        self._data = data
 
     def get_value_by_name(self, name):
         keys = name.split('.')
-        value = self.data
+        value = self._data
         for key in keys:
             value = value[key]
         return value
@@ -236,7 +320,7 @@ class ADict(UserDict):
 
     @mutate_attribute
     def convert_to_immutable(self):
-        self.data = MappingProxyType(self.data)
+        self._data = MappingProxyType(self._data)
 
     @mutate_attribute
     def json(self):
@@ -314,6 +398,11 @@ class ADict(UserDict):
             base_paths = config.pop('_base_')
             if isinstance(base_paths, str):
                 base_paths = [base_paths]
+            base_paths = [
+                os.path.join(os.path.dirname(os.path.realpath(path)), base_path)
+                if not os.path.exists(base_path) else base_path
+                for base_path in base_paths
+            ]
             base_configs = [cls.from_mm_config(path) for path in base_paths]
         else:
             base_configs = []
@@ -328,14 +417,14 @@ class ADict(UserDict):
             ext = os.path.splitext(path)[1].lower()
             if ext in ('.yml', '.yaml'):
                 with open(path, 'rb') as f:
-                    self.data = yaml.load(f, Loader=yaml.FullLoader)
+                    self._data = yaml.load(f, Loader=yaml.FullLoader)
             elif ext == '.json':
                 with open(path, 'r') as f:
-                    self.data = json.load(f)
+                    self._data = json.load(f)
             elif ext == '.xyz':
-                self.data = xyz.load(path)
+                self._data = xyz.load(path)
             elif ext == '.py':
-                self.data = self.compile_from_file(path).to_dict()
+                self._data = self.compile_from_file(path).to_dict()
             else:
                 raise ValueError(f'{ext} is not a valid file extension.')
         else:
@@ -343,7 +432,7 @@ class ADict(UserDict):
 
     @mutate_attribute
     def load_mm_config(self, path):
-        self.data = self.from_mm_config(path).to_dict()
+        self.update(self.from_mm_config(path).to_dict())
 
     def dump(self, path):
         dir_path = os.path.dirname(path)
@@ -364,6 +453,6 @@ class ADict(UserDict):
         if len(src_keys) != len(tgt_keys):
             raise IndexError(f'Source and target keys cannot be mapped: {len(src_keys)} != {len(tgt_keys)}')
         for src_key in src_keys:
-            if src_key not in self.data:
+            if src_key not in self._data:
                 raise KeyError(f'The key {src_key} does not exist.')
-        self.__setitem__(tgt_keys, [self.data.pop(src_key) for src_key in src_keys])
+        self.__setitem__(tgt_keys, [self._data.pop(src_key) for src_key in src_keys])

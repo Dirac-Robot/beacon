@@ -44,6 +44,8 @@ class DistributedMixIn:
             obj = [obj]
             dist.broadcast_object_list(obj)
             obj = obj[0]
+        elif self.backend == 'beacon':
+            raise NotImplementedError()  # todo
         else:
             raise ValueError(f'Unsupported backend: {self.backend}')
         return obj
@@ -52,6 +54,8 @@ class DistributedMixIn:
         if self.backend == 'pytorch':
             gathered_objects = [None for _ in range(self.world_size)]
             dist.all_gather_object(gathered_objects, obj)
+        elif self.backend == 'beacon':
+            raise NotImplementedError()  # todo
         else:
             raise ValueError(f'Unsupported backend: {self.backend}')
         return gathered_objects
@@ -215,4 +219,5 @@ class DistributedHyperBand(DistributedMixIn, HyperBand, GridSpaceMixIn):
         results = super().estimate(estimator, distributions, *args, **kwargs)
         results = list(chain(*self.all_gather_object(results)))
         return results
+
 

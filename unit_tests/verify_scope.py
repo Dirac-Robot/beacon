@@ -189,6 +189,26 @@ class ScopeUnitTest(unittest.TestCase):
         self.assertEqual(self.config.batch_size, 1024)
         self.assertEqual(self.config.weight_decay, 1)
 
+    def test_activate_and_pause(self):
+        scope = self.scope
+
+        @scope.observe()
+        def test_view(unit_test_config):
+            unit_test_config.learning_rate = 0.1
+            unit_test_config.factor = 1
+
+        @scope
+        def test_main(unit_test_config=None):
+            return unit_test_config
+
+        scope.pause()
+        self.assertIsNone(test_main())
+        test_main(dict())
+        scope.activate()
+        with self.assertRaises(TypeError):
+            test_main(dict())
+        self.assertIsNotNone(test_main())
+
 
 if __name__ == "__main__":
     unittest.main()

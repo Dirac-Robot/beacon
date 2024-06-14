@@ -238,6 +238,14 @@ if some people does not want to use existing `Scope`, but their own `Scope` inst
 pre-implemented decorators frustrate them. But the main motto of `beacon` is 
 "Do not bother essential things with trivial things". So, you can easily override `Scope` or use multiple `Scope`'s in your codes. 
 
+#### Manual Control
+`Scope` can be turned on or off easily.
+```python
+scope = ...
+scope.activate()  # scope is activated
+scope.pause()  # scope is deactivated
+```
+
 #### Override
 If existing codes are wrapped with another scope, it can be overridden using `Scope.override`. It is class-method to
 assign new scope suppressing error if its name is already defined in global registry.

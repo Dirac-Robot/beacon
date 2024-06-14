@@ -187,6 +187,13 @@ class Scope:
         self.external_priority = external_priority
         self.compute = False
         self.config_in_compute = None
+        self.mode = 'ON'
+
+    def activate(self):
+        self.mode = 'ON'
+
+    def pause(self):
+        self.mode = 'OFF'
     
     def register(self):
         registry = self.__class__.registry
@@ -326,7 +333,8 @@ class Scope:
         @wraps(func)
         def inner(*args, **kwargs):
             with self._recreate_context():
-                args, kwargs = self.get_config_updated_arguments(func, *args, **kwargs)
+                if self.mode == 'ON':
+                    args, kwargs = self.get_config_updated_arguments(func, *args, **kwargs)
                 return func(*args, **kwargs)
         return inner
 
