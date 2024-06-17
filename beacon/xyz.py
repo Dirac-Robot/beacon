@@ -54,7 +54,7 @@ class GlobalParser:
                 xyz_raw_str += ' '+str(child.value)
         xyz_raw_str = decoding_format_str+xyz_raw_str
         # If decoding format is empty, remove first line break
-        if xyz_raw_str[0] == '\n':
+        if xyz_raw_str and xyz_raw_str[0] == '\n':
             xyz_raw_str = xyz_raw_str[1:]
         return xyz_raw_str
 
