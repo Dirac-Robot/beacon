@@ -15,14 +15,14 @@ class HyperOpt:
         if mode not in ('min', 'max'):
             raise ValueError('mode must be either "min" or "max".')
         self.scope = scope
-        self.enabled_params = set(search_spaces.keys())
         self.search_spaces = search_spaces
         self.config = scope.config.clone()
         self.tracker = tracker
         self.mode = mode
         self.config.__hyperopt_id__ = self.get_hyperopt_id()
 
-    def get_hyperopt_id(self):
+    @classmethod
+    def get_hyperopt_id(cls):
         return str(uuid.uuid4())
 
     def main(self, func):
@@ -81,11 +81,9 @@ class DistributedHyperOpt(DistributedMixIn, HyperOpt):
 
 class GridSpaceMixIn:
     @classmethod
-    def prepare_distributions(cls, base_config, enabled_params, search_spaces):
+    def prepare_distributions(cls, base_config, search_spaces):
         sampling_spaces = ADict()
         for param_name, search_space in search_spaces.items():
-            if param_name not in enabled_params:
-                raise KeyError(f'Parameter {param_name} is not defined at scope.')
             if 'param_type' not in search_space:
                 raise KeyError(f'param_type for parameter {param_name} is not defined at search_spaces.')
             param_type = search_space['param_type'].upper()
@@ -98,7 +96,7 @@ class GridSpaceMixIn:
                         stop=stop,
                         num=search_space.num_samples,
                         dtype=np.int64
-                    )
+                    ).tolist()
                 elif space_type == 'LOG':
                     base = search_space.get('base', 2)
                     optim_space = np.logspace(
@@ -107,7 +105,7 @@ class GridSpaceMixIn:
                         num=search_space.num_samples,
                         dtype=np.int64,
                         base=base
-                    )
+                    ).tolist()
                 else:
                     raise ValueError(f'Invalid space_type: {space_type}')
             elif param_type == 'FLOAT':
@@ -119,7 +117,7 @@ class GridSpaceMixIn:
                         stop=stop,
                         num=search_space.num_samples,
                         dtype=np.float32
-                    )
+                    ).tolist()
                 elif space_type == 'LOG':
                     base = search_space.get('base', 10)
                     optim_space = np.logspace(
@@ -128,7 +126,7 @@ class GridSpaceMixIn:
                         num=search_space.num_samples,
                         dtype=np.float32,
                         base=base
-                    )
+                    ).tolist()
                 else:
                     raise ValueError(f'Invalid space_type: {space_type}')
             elif param_type == 'CATEGORY':
@@ -153,7 +151,7 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
         super().__init__(scope, search_spaces, tracker, mode)
         self.halving_rate = halving_rate
         self.num_min_samples = num_min_samples
-        self.distributions = self.prepare_distributions(self.config, self.enabled_params, self.search_spaces)
+        self.distributions = self.prepare_distributions(self.config, self.search_spaces)
 
     def main(self, func):
         def launch(*args, **kwargs):
@@ -167,8 +165,10 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
                 for config in results[:int(len(results)*self.halving_rate)]:
                     config.__num_halved__ += 1
                     distributions.append(config)
-            best_config = logs[-1][0]
-            metric = self.estimate_single_run(func, best_config, *args, **kwargs)
+            last_config = logs[-1][0]
+            metric = self.estimate_single_run(func, last_config, *args, **kwargs)
+            best_config = dcp(last_config)
+            best_config.__metric__ = metric
             logs.append([best_config])
             return ADict(config=best_config, metric=metric, logs=logs)
         return launch
@@ -176,6 +176,7 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
     def estimate(self, estimator, distributions, *args, **kwargs):
         results = []
         for config in distributions:
+            config = dcp(config)
             self.scope.config = config
             metric = self.estimate_single_run(estimator, config, *args, **kwargs)
             config.__metric__ = metric
@@ -186,13 +187,16 @@ class HyperBand(HyperOpt, GridSpaceMixIn):
         self.scope.config = config
         return self.scope(estimator)(*args, **kwargs)
 
-    def compute_optimized_initial_training_steps(self, max_steps):
+    def num_generations(self):
         max_size = len(self.distributions)
         min_size = self.num_min_samples
-        num_generations = math.ceil(math.log(max_size)-math.log(min_size)/math.log(self.halving_rate))
+        return math.ceil(math.log(min_size/max_size)/math.log(self.halving_rate))
+
+    def compute_optimized_initial_training_steps(self, max_steps):
+        num_generations = self.num_generations()
         min_steps = max_steps*math.pow(self.halving_rate, num_generations)
         return [
-            *(math.ceil(min_steps/math.pow(self.halving_rate, index)) for index in range(num_generations)),
+            *(math.ceil(min_steps/math.pow(self.halving_rate, index)) for index in range(1, num_generations)),
             max_steps
         ]
 

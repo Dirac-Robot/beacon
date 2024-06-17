@@ -239,7 +239,7 @@ pre-implemented decorators frustrate them. But the main motto of `beacon` is
 "Do not bother essential things with trivial things". So, you can easily override `Scope` or use multiple `Scope`'s in your codes. 
 
 #### Manual Control
-`Scope` can be turned on or off easily.
+`Scope` can be turned on or off manually, and even it is very simple.
 ```python
 scope = ...
 scope.activate()  # scope is activated
@@ -495,4 +495,4 @@ max_steps = 120000
 print(hyperband.compute_optimized_initial_training_steps(max_steps))  # [27, 88, 292, 972, 3240, 10800, 36000, 120000]
 ```
 
-In the future, distributed hyperband and some other HyperOpt algorithms like BOHB will be added soon.
+In the future, distributed hyperband and some other HyperOpt algorithms will be added soon.

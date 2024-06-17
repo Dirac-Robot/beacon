@@ -20,6 +20,11 @@ def default_2(config_2):
     config_2.batch_size = 16
 
 
+@scope_2.observe(default=True, lazy=True)
+def lazy_view(config_2):
+    config_2.batch_size = 16
+
+
 @scope_2.manual
 def default_manual_2(config_2):
     config_2.batch_size = 'batch size.'
@@ -31,4 +36,6 @@ def main(config_1, config_2):
 
 
 if __name__ == '__main__':
+    import sys
+    sys.argv.insert(1, 'manual')
     main()

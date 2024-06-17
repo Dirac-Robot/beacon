@@ -55,7 +55,12 @@ def _add_func_to_scope(scope, func, field=None, priority=0, lazy=False, default=
     if isinstance(chain_with, str):
         chain_with = [chain_with]
     scope.views[field] = {
-        "view_type": 'function', "priority": priority, "lazy": lazy, "fn": func, "chain_with": chain_with
+        "view_type": 'function',
+        "priority": priority,
+        "lazy": lazy,
+        "fn": func,
+        "chain_with": chain_with,
+        "default": default
     }
     if default:
         scope.assign(field)
@@ -81,6 +86,7 @@ def add_config_to_scope(scope, field=None, config=None, priority=0, lazy=False, 
     if isinstance(chain_with, str):
         chain_with = [chain_with]
     view.chain_with = chain_with
+    view.default = default
     scope.views[field] = view
     if default:
         scope.assign(field)
@@ -237,14 +243,36 @@ class Scope:
     @classmethod
     def logging_manual(cls):
         for scope_name, scope in cls.registry.items():
+            print('-'*50)
             print(f'[Scope "{scope_name}"]')
+            print('(The Applying Order of Views)')
+            view_names = list([key for key, view in scope.views.items() if not view.lazy])
+            lazy_view_names = list([key for key, view in scope.views.items() if view.lazy])
+            view_names.sort(key=lambda x: scope.views[x].priority)
+            lazy_view_names.sort(key=lambda x: scope.views[x].priority)
+            print(' → '.join(view_names+['(CLI Inputs)']+lazy_view_names))
+            print('(User Manuals)')
             manuals = scope.manuals
             if len(cls.registry) > 1:
                 manuals = manuals.clone()
                 for key, value in scope.manuals.items():
                     manuals[f'{scope.name}.{key}'] = manuals.pop(key)
             print(manuals.to_xyz())
+        print('-'*50)
         sys.exit(0)
+
+    def get_assigned_views(self):
+        default_views = [view for view in self.screen.views if self.views[view].default]
+        views = [view for view in self.screen.views if view not in default_views]
+        default_lazy_views = [lazy_view for lazy_view in self.screen.lazy_views if self.views[lazy_view].default]
+        lazy_views = [lazy_view for lazy_view in self.screen.lazy_views if lazy_view not in default_lazy_views]
+        return ADict(
+            default_views=default_views,
+            default_lazy_views=default_lazy_views,
+            views=views,
+            lazy_views=lazy_views,
+            literals=self.screen.literals
+        )
 
     def assign(self, literals):
         if not isinstance(literals, (list, tuple)) or isinstance(literals, str):
@@ -262,9 +290,6 @@ class Scope:
                     self.screen.views.append(literal)
             else:
                 eq_idx = literal.index('=')
-                name, value = literal[:eq_idx], literal[eq_idx:]
-                if name[-4:] == ':str':
-                    literal = f'{name[:-1]}=\"{value}\"'
                 self.screen.literals.append(literal)
 
     def apply(self):

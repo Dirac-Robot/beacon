@@ -1,5 +1,6 @@
 import unittest
 import sys
+from itertools import chain
 
 from beacon.adict import ADict
 from beacon.scope import Scope, parse_args_pythonic
@@ -208,6 +209,34 @@ class ScopeUnitTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             test_main(dict())
         self.assertIsNotNone(test_main())
+
+    def test_get_assigned_views(self):
+        scope = self.scope
+
+        @scope.observe()
+        def test_view(unit_test_config):
+            unit_test_config.learning_rate = 0.1
+            unit_test_config.factor = 1
+
+        @scope.observe(chain_with='test_view')
+        def test_chained_view(unit_test_config):
+            if unit_test_config.learning_rate == 0.1:
+                unit_test_config.weight_decay = 1
+            else:
+                unit_test_config.weight_decay = 0
+            unit_test_config.learning_rate = 0.2
+
+        @scope.observe(chain_with='test_chained_view')
+        def test_chained_chained_view(unit_test_config):
+            pass
+
+        sys.argv = 'test.py test_chained_chained_view learning_rate=0.1 factor=2'.split()
+        parse_args_pythonic()
+        self.scope.apply()
+        self.assertEqual(
+            '-'.join(chain(*self.scope.get_assigned_views().values())),
+            'test_view-test_chained_view-test_chained_chained_view-learning_rate=0.1-factor=2'
+        )
 
 
 if __name__ == "__main__":
