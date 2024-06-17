@@ -60,6 +60,15 @@ class DistributedMixIn:
             raise ValueError(f'Unsupported backend: {self.backend}')
         return gathered_objects
 
+    def destroy(self):
+        if self.backend == 'pytorch':
+            if dist.is_initialized():
+                dist.destroy_process_group()
+        elif self.backend == 'beacon':
+            raise NotImplementedError()  # todo
+        else:
+            raise ValueError(f'Unsupported backend: {self.backend}')
+
     def get_hyperopt_id(self):
         return self.broadcast_object_from_root(str(uuid.uuid4()))
 
@@ -223,5 +232,10 @@ class DistributedHyperBand(DistributedMixIn, HyperBand, GridSpaceMixIn):
         results = super().estimate(estimator, distributions, *args, **kwargs)
         results = list(chain(*self.all_gather_object(results)))
         return results
+
+    def estimate_single_run(self, estimator, config, *args, **kwargs):
+        result = super().estimate(estimator, config, *args, **kwargs)
+        self.destroy()
+        return result
 
 
