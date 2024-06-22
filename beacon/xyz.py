@@ -49,6 +49,11 @@ class GlobalParser:
             xyz_raw_str += '  '*level+prefix+str(self.value)+postfix
         else:
             level = -1
+        if not self.children:
+            if self.node_type == 'iter':
+                xyz_raw_str += ' [Empty Sequence]'
+            elif self.node_type == 'dict':
+                xyz_raw_str += ' [Empty Mapping]'
         for child in self.children:
             if child.value_type != 'value':
                 xyz_raw_str += '\n'+child.dumps(level+1)
@@ -229,4 +234,6 @@ def load(path_or_file):
 
 
 if __name__ == "__main__":
-    x = load('/Users/a13078/Library/Mobile Documents/com~apple~CloudDocs/Projects/beacon/config.xyz')
+    # x = load('/Users/a13078/Library/Mobile Documents/com~apple~CloudDocs/Projects/beacon/config.xyz')
+    x = dict(a=[], b={}, c=None, d=1)
+    print(dumps(x))

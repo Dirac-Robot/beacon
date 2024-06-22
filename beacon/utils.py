@@ -39,6 +39,10 @@ def convert_string_to_value(value):
         return value
     if value.upper() == 'None':
         return None
+    elif value == '[Empty Sequence]':
+        return []
+    elif value == '[Empty Mapping]':
+        return dict()
     elif value.isdecimal():
         return int(value)
     elif remove_all(value.lower(), ('.', 'e+', 'e-')).isnumeric():
