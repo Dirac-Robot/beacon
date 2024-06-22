@@ -435,14 +435,14 @@ class ADict(Dict):
         self.update(self.from_mm_config(path).to_dict())
 
     def dump(self, path):
-        dir_path = os.path.dirname(path)
+        dir_path = os.path.dirname(os.path.realpath(path))
         os.makedirs(dir_path, exist_ok=True)
         ext = os.path.splitext(path)[1].lower()
         if ext in ('.yml', '.yaml'):
-            with open(path, 'rb') as f:
+            with open(path, 'wb') as f:
                 return yaml.dump(self.to_dict(), f, Dumper=yaml.Dumper)
         elif ext == '.json':
-            with open(path, 'r') as f:
+            with open(path, 'w') as f:
                 return json.dump(self.to_dict(), f)
         elif ext == '.xyz':
             return xyz.dump(self.to_dict(), path)

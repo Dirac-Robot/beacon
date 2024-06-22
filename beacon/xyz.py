@@ -1,6 +1,8 @@
 import os
 from typing import Iterable
 
+from beacon.utils import convert_string_to_value
+
 
 class GlobalParser:
     def __init__(self, value, value_type, parent=None, format_dict=None):
@@ -13,7 +15,7 @@ class GlobalParser:
 
     def add_child(self, child_node):
         self.children.append(child_node)
-        child_node.module_parent = self
+        child_node.parent = self
         if child_node.value_type == 'key':
             self.node_type = 'dict'
         elif child_node.value_type == 'index':
@@ -57,6 +59,9 @@ class GlobalParser:
         if xyz_raw_str and xyz_raw_str[0] == '\n':
             xyz_raw_str = xyz_raw_str[1:]
         return xyz_raw_str
+
+    def __repr__(self):
+        return f'Node({", ".join([f"{name}={value}" for name, value in vars(self).items()])})'
 
 
 # Modifying function to handle custom postfix for keys and indices more dynamically
@@ -105,7 +110,7 @@ def convert_lines_to_tree(lines, format_dict=None):
                 indent += 2
                 lines = [' '*indent+index_postfix.join(tokens).strip()]+lines
         else:
-            value = stripped_line
+            value = convert_string_to_value(stripped_line)
             new_node = GlobalParser(value, 'value', current_node)
             current_node.add_child(new_node)
             current_node = new_node.parent
@@ -143,13 +148,11 @@ def convert_structure_to_tree(struct, root=None, format_dict=None):
 def convert_tree_to_structure(root):
     if root.node_type == 'item':
         return root.children[0].value
-
-    if root.node_type == 'dict':
+    elif root.node_type == 'dict':
         children_dict = {}
         for child in root.children:
             children_dict[child.value] = convert_tree_to_structure(child)
         return children_dict
-
     elif root.node_type == 'iter':
         size = max([child.value+1 for child in root.children])
         children_list = [None]*size
@@ -159,14 +162,14 @@ def convert_tree_to_structure(root):
 
 
 def parse_lines(lines):
-    is_decoding_format = True
     decoding_formats = []
     data_lines = []
     for line in lines:
-        if is_decoding_format and line != '':
+        is_decoding_format = any(
+            map(lambda text: line.startswith(text), ('key-prefix', 'key-postfix', 'index-prefix', 'index-postfix'))
+        )
+        if is_decoding_format:
             decoding_formats.append(line)
-        elif line == '':
-            is_decoding_format = False
         else:
             data_lines.append(line)
     return decoding_formats, data_lines
@@ -214,7 +217,7 @@ def dump(obj, path_or_file, format_dict=None):
 
 
 def load(path_or_file):
-    if isinstance(path_or_file, os.PathLike):
+    if isinstance(path_or_file, (str, os.PathLike)):
         with open(path_or_file, 'r') as f:
             lines = list(f.readlines())
     else:
@@ -225,3 +228,5 @@ def load(path_or_file):
     return convert_tree_to_structure(root)
 
 
+if __name__ == "__main__":
+    x = load('/Users/a13078/Library/Mobile Documents/com~apple~CloudDocs/Projects/beacon/config.xyz')
