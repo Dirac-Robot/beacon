@@ -412,15 +412,15 @@ class ADict(Dict):
         return mm_like_config
 
     @mutate_attribute
-    def load(self, path):
+    def load(self, path, **kwargs):
         if os.path.exists(path):
             ext = os.path.splitext(path)[1].lower()
             if ext in ('.yml', '.yaml'):
                 with open(path, 'rb') as f:
-                    self._data = yaml.load(f, Loader=yaml.FullLoader)
+                    self._data = yaml.load(f, Loader=yaml.FullLoader, **kwargs)
             elif ext == '.json':
                 with open(path, 'r') as f:
-                    self._data = json.load(f)
+                    self._data = json.load(f, **kwargs)
             elif ext == '.xyz':
                 self._data = xyz.load(path)
             elif ext == '.py':
@@ -434,18 +434,18 @@ class ADict(Dict):
     def load_mm_config(self, path):
         self.update(self.from_mm_config(path).to_dict())
 
-    def dump(self, path):
+    def dump(self, path, **kwargs):
         dir_path = os.path.dirname(os.path.realpath(path))
         os.makedirs(dir_path, exist_ok=True)
         ext = os.path.splitext(path)[1].lower()
         if ext in ('.yml', '.yaml'):
             with open(path, 'wb') as f:
-                return yaml.dump(self.to_dict(), f, Dumper=yaml.Dumper)
+                return yaml.dump(self.to_dict(), f, Dumper=yaml.Dumper, **kwargs)
         elif ext == '.json':
             with open(path, 'w') as f:
-                return json.dump(self.to_dict(), f)
+                return json.dump(self.to_dict(), f, **kwargs)
         elif ext == '.xyz':
-            return xyz.dump(self.to_dict(), path)
+            return xyz.dump(self.to_dict(), path, **kwargs)
         else:
             raise ValueError(f'{ext} is not a valid file extension.')
 
