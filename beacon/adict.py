@@ -280,7 +280,7 @@ class ADict(Dict):
             if __m is not None:
                 self.update(**__m, recurrent=recurrent)
             if recurrent:
-                children = ADict()
+                children = self.__class__()
                 for k, v in kwargs.items():
                     if k in self and isinstance(v, Mapping):
                         self.__getitem__(k).update(**v, recurrent=True)
@@ -375,7 +375,7 @@ class ADict(Dict):
             if not name.startswith('__') and not isinstance(value, (types.ModuleType, types.FunctionType))
         }
         del sys.modules[config_name]
-        return ADict(**config)
+        return cls(**config)
 
     def mm_like_update(self, **kwargs):
         for key, value in kwargs.items():
