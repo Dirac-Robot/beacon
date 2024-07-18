@@ -166,6 +166,11 @@ def release():
 _parser = argparse.ArgumentParser
 
 
+def _print_config(config):
+    print(config.to_xyz())
+    sys.exit(0)
+
+
 class Scope:
     registry = ADict()
     parsed = False
@@ -189,6 +194,7 @@ class Scope:
         self.views = ADict()
         self.manuals = ADict()
         self.observe('_default', config, priority=-1, lazy=False)
+        add_func_to_scope(self, 'print', priority=1280, lazy=True, default=False)(_print_config)
         self.screen = ADict(views=[], literals=[], lazy_views=[])
         self.external_priority = external_priority
         self.compute = False
@@ -289,7 +295,6 @@ class Scope:
                         self.assign(view_info.chain_with)
                     self.screen.views.append(literal)
             else:
-                eq_idx = literal.index('=')
                 self.screen.literals.append(literal)
 
     def apply(self):
