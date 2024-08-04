@@ -200,6 +200,7 @@ class Scope:
         self.compute = False
         self.config_in_compute = None
         self.mode = 'ON'
+        self.is_applied = False
 
     def activate(self):
         self.mode = 'ON'
@@ -331,11 +332,13 @@ class Scope:
                 self.config.update(view.config)
             else:
                 view.fn(self.config)
+        self.is_applied = True
 
     def __enter__(self):
         if not Scope.parsed:
             parse_args_pythonic()
-        self.apply()
+        if not self.is_applied:
+            self.apply()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
