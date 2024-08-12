@@ -37,8 +37,12 @@ def remove_all(string, targets):
 def convert_string_to_value(value):
     if not isinstance(value, str):
         return value
-    if value.upper() == 'None':
+    if value.lower() == 'none':
         return None
+    elif value.lower() == 'true':
+        return True
+    elif value.lower() == 'false':
+        return False
     elif value == '[Empty Sequence]':
         return []
     elif value == '[Empty Mapping]':

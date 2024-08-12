@@ -207,6 +207,7 @@ class ADictUnitTest(unittest.TestCase):
     def test_convert_from_iterables(self):
         adict_converted = ADict([('Andrew', 'Jackson'), ('John', 'Christopher')])
         self.assertEqual(adict_converted.Andrew, 'Jackson')
+        adict_converted['aa'] = ADict(bb=ADict(ee='ll'))
 
 
 if __name__ == "__main__":
