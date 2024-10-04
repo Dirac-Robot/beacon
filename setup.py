@@ -5,5 +5,5 @@ setup(
     name='beacon',
     version=__version__,
     packages=find_packages(),
-    install_requires=['rethinkdb', 'pandas', 'tqdm', 'pytz', 'loguru', 'gradio', 'numpy', 'setuptools']
+    install_requires=['rethinkdb', 'pandas', 'tqdm', 'pytz', 'loguru', 'numpy', 'setuptools', 'pyyaml']
 )

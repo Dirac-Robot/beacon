@@ -205,8 +205,14 @@ class Scope:
     def activate(self):
         self.mode = 'ON'
 
-    def pause(self):
+    def deactivate(self):
         self.mode = 'OFF'
+
+    @contextmanager
+    def pause(self):
+        self.deactivate()
+        yield
+        self.activate()
     
     def register(self):
         registry = self.__class__.registry
