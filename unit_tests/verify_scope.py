@@ -64,7 +64,13 @@ class ScopeUnitTest(unittest.TestCase):
         def test_view(unit_test_config):
             unit_test_config.learning_rate = 0.05
 
-        sys.argv = 'test.py batch_size=1024 test_view prompt="Elsa is doing magic." eps=[1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]]'.split()
+        sys.argv = (
+            'test.py '
+            'batch_size=1024 '
+            'test_view '
+            'prompt="Elsa is doing magic." '
+            'eps=[1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]]'
+        ).split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.05)
