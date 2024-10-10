@@ -22,7 +22,8 @@ def parse_args_pythonic():
     else:
         _pythonic_vars = sys.argv[1:]
     joined = ' '.join(_pythonic_vars)
-    fold = r'(\'[^\']*\')|("[^"]*")|(\[[^\]]*\])|(\{[^\}]*\})|(\([^\(]*\))'
+    joined = joined.replace('`', '"')
+    fold = r'(\'[^\']*\')|("[^"]*")'
     pattern = r'\ (?=[a-zA-Z_][a-zA-Z0-9_.]*\ *)'
     wrapped_vars = [sorted(user_literal, key=lambda x: len(x))[-1] for user_literal in re.findall(fold, joined)]
     _pythonic_vars = re.split(pattern, re.sub(fold, '<REPLACED>', joined))

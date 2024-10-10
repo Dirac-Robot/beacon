@@ -64,13 +64,13 @@ class ScopeUnitTest(unittest.TestCase):
         def test_view(unit_test_config):
             unit_test_config.learning_rate = 0.05
 
-        sys.argv = 'test.py batch_size=1024 test_view prompt="Elsa is doing magic." eps=[1, 2]'.split()
+        sys.argv = 'test.py batch_size=1024 test_view prompt="Elsa is doing magic." eps=[1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]]'.split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.05)
         self.assertEqual(self.config.batch_size, 1024)
         self.assertEqual(self.config.prompt, 'Elsa is doing magic.')
-        self.assertEqual(self.config.eps, [1, 2])
+        self.assertEqual(self.config.eps, [1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]])
 
     def test_positional_case(self):
         scope = self.scope
@@ -183,12 +183,13 @@ class ScopeUnitTest(unittest.TestCase):
         def test_chained_chained_view(unit_test_config):
             pass
 
-        sys.argv = 'test.py test_chained_chained_view learning_rate=0.1 factor=2'.split()
+        sys.argv = 'test.py test_chained_chained_view learning_rate=0.1 factor=2 model_name=`resnet`'.split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.2)
         self.assertEqual(self.config.batch_size, 1024)
         self.assertEqual(self.config.weight_decay, 1)
+        self.assertEqual(self.config.model_name, 'resnet')
 
     def test_activate_and_pause(self):
         scope = self.scope
@@ -202,10 +203,9 @@ class ScopeUnitTest(unittest.TestCase):
         def test_main(unit_test_config=None):
             return unit_test_config
 
-        scope.pause()
-        self.assertIsNone(test_main())
-        test_main(dict())
-        scope.activate()
+        with scope.pause():
+            pause_result = test_main()
+        self.assertIsNone(pause_result)
         with self.assertRaises(TypeError):
             test_main(dict())
         self.assertIsNotNone(test_main())
