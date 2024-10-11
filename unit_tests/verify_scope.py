@@ -70,7 +70,7 @@ class ScopeUnitTest(unittest.TestCase):
             'num_layers=[1, 4, [1, 2, 3]] '
             'test_view '
             'prompt=`Elsa is doing magic.` '
-            'eps=`a=\`aaa+\`b=[1, 2, 3]\`\``'
+            'equation=`a=\`0.1, b=[1, 2, 3], mode=\`train\`\``'
         ).split()
         parse_args_pythonic()
         self.scope.apply()
@@ -78,7 +78,7 @@ class ScopeUnitTest(unittest.TestCase):
         self.assertEqual(self.config.batch_size, 1024)
         self.assertEqual(self.config.num_layers, [1, 4, [1, 2, 3]])
         self.assertEqual(self.config.prompt, 'Elsa is doing magic.')
-        self.assertEqual(self.config.eps, 'a="aaa+"b=[1, 2, 3]""')
+        self.assertEqual(self.config.equation, 'a="0.1, b=[1, 2, 3], mode="train""')
 
     def test_positional_case(self):
         scope = self.scope
