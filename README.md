@@ -75,11 +75,11 @@ python train.py normal_config important_config most_important_config  # 2
 Customized configs or python literals can be defined via CLI environment also.
 
 ```shell
-python train.py config_1 config_2 lr=0.01 model.backbone.type=\'ResNet50\' model.backbone.embed_dims=128 model.backbone.depths=[2, 2, 18, 2]
+python train.py config_1 config_2 lr=0.01 model.backbone.type=`ResNet50` model.backbone.embed_dims=128 model.backbone.depths=[2, 2, 18, 2]
 ```
 
 For convenience, python literals defined via CLI always have the highest priorities. 
-Do not forget to wrap strings by quotes with escape(\' or \"), or bash automatically removes all quotes from arguments.
+Do not forget to wrap strings by ` instead of quotes, or error will be thrown.
 
 ---
 
