@@ -67,6 +67,7 @@ class ScopeUnitTest(unittest.TestCase):
         sys.argv = (
             'test.py '
             'batch_size=1024 '
+            'num_layers=[1, 4, [1, 2, 3]] '
             'test_view '
             'prompt=`Elsa is doing magic.` '
             'eps=`a=\`aaa+\`b=[1, 2, 3]\`\``'
@@ -75,6 +76,7 @@ class ScopeUnitTest(unittest.TestCase):
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.05)
         self.assertEqual(self.config.batch_size, 1024)
+        self.assertEqual(self.config.num_layers, [1, 4, [1, 2, 3]])
         self.assertEqual(self.config.prompt, 'Elsa is doing magic.')
         self.assertEqual(self.config.eps, 'a="aaa+"b=[1, 2, 3]""')
 
