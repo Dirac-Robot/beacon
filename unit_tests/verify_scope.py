@@ -68,15 +68,15 @@ class ScopeUnitTest(unittest.TestCase):
             'test.py '
             'batch_size=1024 '
             'test_view '
-            'prompt="Elsa is doing magic." '
-            'eps=[1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]]'
+            'prompt=`Elsa is doing magic.` '
+            'eps=`a=\`aaa+\`b=[1, 2, 3]\`\``'
         ).split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.05)
         self.assertEqual(self.config.batch_size, 1024)
         self.assertEqual(self.config.prompt, 'Elsa is doing magic.')
-        self.assertEqual(self.config.eps, [1, 2, ["a=1 b=2 d=[2, 3]", 1, 2.0]])
+        self.assertEqual(self.config.eps, 'a="aaa+"b=[1, 2, 3]""')
 
     def test_positional_case(self):
         scope = self.scope
@@ -107,7 +107,7 @@ class ScopeUnitTest(unittest.TestCase):
                 else:
                     unit_test_config.batch_size = 1024
 
-        sys.argv = 'test.py learning_rate=0.1 test_view prompt="Elsa is doing magic." eps=[1, 2] factor=2'.split()
+        sys.argv = 'test.py learning_rate=0.1 test_view prompt=`Elsa is doing magic.` eps=[1, 2] factor=2'.split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.1)
@@ -128,7 +128,7 @@ class ScopeUnitTest(unittest.TestCase):
                 else:
                     unit_test_config.batch_size = 1024
 
-        sys.argv = 'test.py learning_rate=0.1 test_view prompt="Elsa is doing magic." eps=[1, 2] factor=2'.split()
+        sys.argv = 'test.py learning_rate=0.1 test_view prompt=`Elsa is doing magic.` eps=[1, 2] factor=2'.split()
         parse_args_pythonic()
         self.scope.apply()
         self.assertEqual(self.config.learning_rate, 0.1)

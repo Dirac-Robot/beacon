@@ -10,6 +10,8 @@ from functools import wraps
 from beacon.adict import ADict
 from inspect import currentframe, getframeinfo
 
+from beacon.parser import parse_command
+
 
 # safe compile
 def exec_with_no_permissions(code, __locals):
@@ -22,24 +24,22 @@ def parse_args_pythonic():
     else:
         _pythonic_vars = sys.argv[1:]
     joined = ' '.join(_pythonic_vars)
-    joined = joined.replace('`', '"')
-    fold = r'(\'[^\']*\')|("[^"]*")'
-    pattern = r'\ (?=[a-zA-Z_][a-zA-Z0-9_.]*\ *)'
-    wrapped_vars = [sorted(user_literal, key=lambda x: len(x))[-1] for user_literal in re.findall(fold, joined)]
-    _pythonic_vars = re.split(pattern, re.sub(fold, '<REPLACED>', joined))
+    _pythonic_vars = parse_command(joined)
     pythonic_vars = []
     for literal in _pythonic_vars:
         if '=' not in literal:
             pythonic_vars.extend(literal.split())
         else:
-            pythonic_vars.append(literal)
+            name, *values = literal.split('=')
+            value = '='.join(values)
+            if value.startswith('`') and value.endswith('`'):
+                value = f'"{value[1:-1]}"'.replace('`', '\"')
+            pythonic_vars.append(f'{name}={value}')
     default_prefix = ''
     if len(Scope.registry) == 1:
         scope_name = list(Scope.registry.keys())[0]
         default_prefix += f'{scope_name}.'
     for literal in pythonic_vars:
-        if '<REPLACED>' in literal:
-            literal = literal.replace('<REPLACED>', wrapped_vars.pop(0))
         literal = default_prefix+literal
         scope_name = literal.split('.')[0]
         scope = Scope.registry.get(scope_name)
