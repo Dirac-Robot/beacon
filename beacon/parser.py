@@ -17,7 +17,7 @@ def parse_command(command):
                 value, i = parse_value(command, i)
             else:
                 value = ''
-            tokens.append(f"{key}={value}")
+            tokens.append(f'{key}={value}')
         else:
             token_start = start
             while i < length and not command[i].isspace():
