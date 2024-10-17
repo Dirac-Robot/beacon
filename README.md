@@ -79,7 +79,8 @@ python train.py config_1 config_2 lr=0.01 model.backbone.type=`ResNet50` model.b
 ```
 
 For convenience, python literals defined via CLI always have the highest priorities. 
-Do not forget to wrap strings by ` instead of quotes, or error will be thrown.
+Do not forget to wrap strings by "%" instead of quotes, or error will be thrown. 
+(There are few special characters that bash allows.)
 
 ---
 
