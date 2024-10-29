@@ -26,7 +26,7 @@ class DuckTypedRTTracker:
     def log(self, values, step=None):
         if step is not None:
             values.update(step=step)
-        self._tracker.write('log', values)
+        self._tracker.append('log', values)
 
     @property
     def tracker(self):

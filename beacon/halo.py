@@ -17,7 +17,7 @@ class HaLo:
         if callable(src) and sentinel:
             src = iter(src, sentinel)
         elif not isinstance(src, Iterable):
-            raise TypeError(f'ART wraps iterable objects only.')
+            raise TypeError(f'{self.__class__.__name__} wraps iterable objects only.')
         self.src = src
         self.collate_fn = collate_fn
         self._index = -1
@@ -41,7 +41,7 @@ class HaLo:
                 elif isinstance(self.src, Sequence):
                     output = self.src[self._index]
                 else:
-                    raise TypeError(f'Source of ART seems to be not an iterable object.')
+                    raise TypeError(f'Source of {self.__class__.__name__} seems to be not an iterable object.')
             except StopIteration:
                 HaLo._curl = self.prev_loop
                 raise StopIteration
@@ -96,7 +96,7 @@ class HaLo:
 halo = HaLo
 
 
-class ALoFunctional:
+class HaLoFunctional:
     @classmethod
     def curl(cls):
         return halo.curl()
@@ -118,4 +118,4 @@ class ALoFunctional:
         return halo.curl().last
 
 
-functional = ALoFunctional
+functional = HaLoFunctional

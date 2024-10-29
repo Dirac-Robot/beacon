@@ -28,7 +28,7 @@ def parse_command(command):
 
 def parse_value(command, i):
     if i < len(command):
-        if command[i] == '`':
+        if command[i] == '%':
             return parse_backtick_string(command, i)
         elif command[i] in ['[', '(', '{']:
             return parse_bracketed_value(command, i)
@@ -41,9 +41,9 @@ def parse_value(command, i):
 
 
 def parse_backtick_string(command, i):
-    assert command[i] == '`'
+    assert command[i] == '%'
     i += 1
-    value = ['`']
+    value = ['%']
     length = len(command)
     nesting_level = 1
     while i < length:
@@ -52,17 +52,17 @@ def parse_backtick_string(command, i):
             value.append(c)
             value.append(command[i+1])
             i += 2
-        elif c == '`':
+        elif c == '%':
             value.append(c)
             i += 1
-            if i < length and command[i] == '`':
+            if i < length and command[i] == '%':
                 value.append(command[i])
                 i += 1
             else:
                 nesting_level -= 1
                 if nesting_level == 0:
                     break
-        elif c == '`':
+        elif c == '%':
             value.append(c)
             nesting_level += 1
             i += 1
@@ -82,13 +82,13 @@ def parse_bracketed_value(command, i):
     stack = [closing_bracket]
     while i < length and stack:
         c = command[i]
-        if c == '\\' and i+1 < length:
+        if c == '%':
+            backtick_value, i = parse_backtick_string(command, i)
+            value.append(backtick_value)
+        elif c == '\\' and i+1 < length:
             value.append(c)
             value.append(command[i+1])
             i += 2
-        elif c == '`':
-            backtick_value, i = parse_backtick_string(command, i)
-            value.append(backtick_value)
         elif c in brackets:
             stack.append(brackets[c])
             value.append(c)

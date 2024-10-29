@@ -1,6 +1,5 @@
 import argparse
 import inspect
-import re
 import sys
 import uuid
 import warnings
@@ -32,8 +31,8 @@ def parse_args_pythonic():
         else:
             name, *values = literal.split('=')
             value = '='.join(values)
-            if value.startswith('`') and value.endswith('`'):
-                value = f'"{value[1:-1]}"'.replace('`', '\"')
+            if value.startswith('%') and value.endswith('%'):
+                value = f'"{value[1:-1]}"'.replace('%', '\"')
             pythonic_vars.append(f'{name}={value}')
     default_prefix = ''
     if len(Scope.registry) == 1:

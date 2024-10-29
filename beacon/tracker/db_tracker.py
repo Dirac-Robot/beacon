@@ -73,7 +73,7 @@ class DBTracker:
             )
         self._tracker_id = tracker_id
 
-    def write(self, key, value):
+    def append(self, key, value):
         tracked_logs = self.r.table(self._cluster_id).get(self._tracker_id)
         tracked_logs.update(lambda row: {
             key: row[key].default([]).append(value),
