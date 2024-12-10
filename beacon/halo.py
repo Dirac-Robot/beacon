@@ -2,7 +2,7 @@ from typing import Iterable, Iterator, Generator, Sequence
 from beacon.adict import ADict
 
 
-class HaLo:
+class HALo:
     _curl = None
 
     def __init__(self, *sources, collate_fn=None, sentinel=None):
@@ -28,9 +28,9 @@ class HaLo:
         return self
 
     def __next__(self):
-        if HaLo._curl != self:
-            self.prev_loop = HaLo._curl
-            HaLo._curl = self
+        if HALo._curl != self:
+            self.prev_loop = HALo._curl
+            HALo._curl = self
         self._index += 1
         if self.next is not None:
             output, self.next = self.next, None
@@ -43,7 +43,7 @@ class HaLo:
                 else:
                     raise TypeError(f'Source of {self.__class__.__name__} seems to be not an iterable object.')
             except StopIteration:
-                HaLo._curl = self.prev_loop
+                HALo._curl = self.prev_loop
                 raise StopIteration
         if self.collate_fn is not None:
             output = self.collate_fn(output)
@@ -93,10 +93,10 @@ class HaLo:
         return indices
 
 
-halo = HaLo
+halo = HALo
 
 
-class HaLoFunctional:
+class HALoFunctional:
     @classmethod
     def curl(cls):
         return halo.curl()
@@ -118,4 +118,4 @@ class HaLoFunctional:
         return halo.curl().last
 
 
-functional = HaLoFunctional
+functional = HALoFunctional

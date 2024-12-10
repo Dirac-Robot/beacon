@@ -1,13 +1,13 @@
 import unittest
 
-from beacon.halo import HaLo
+from beacon.halo import HALo
 
 
 class HaLoUnitTest(unittest.TestCase):
     def setUp(self):
         self.iterable = range(30)
-        self.halo = HaLo(range(30))
-        self.halo_2nd = HaLo(range(30))
+        self.halo = HALo(range(30))
+        self.halo_2nd = HALo(range(30))
 
     def test_iterate(self):
         for item in self.halo:
@@ -18,10 +18,10 @@ class HaLoUnitTest(unittest.TestCase):
 
     def test_curl(self):
         for _ in self.halo:
-            self.assertEqual(HaLo.curl(), self.halo)
+            self.assertEqual(HALo.curl(), self.halo)
             for _ in self.halo_2nd:
-                self.assertEqual(HaLo.curl(), self.halo_2nd)
-            self.assertEqual(HaLo.curl(), self.halo)
+                self.assertEqual(HALo.curl(), self.halo_2nd)
+            self.assertEqual(HALo.curl(), self.halo)
 
 
 if __name__ == "__main__":

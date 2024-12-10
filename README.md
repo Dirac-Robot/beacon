@@ -1,6 +1,25 @@
 # Beacon
 Beacon is collections of useful tools to manage various experiments easily.
 
+### ADict
+`ADict` is variation of `dict` type and used to configure experiments in `Scope`. It supports all methods in `dict` and
+some useful features like accessing items as attributes.
+
+```python
+from beacon.adict import ADict
+
+config = ADict(lr=0.1, optimizer='SGD')
+
+
+if __name__ == '__main__':
+    print(config.lr == config['lr'])
+```
+
+The results will be:
+```shell
+True
+```
+
 ### Scope
 Configurations can bother experiments when it is not carefully managed. Scope decreases potentials of mistakes on 
 setup experiments or reproducing previous results.
@@ -75,7 +94,7 @@ python train.py normal_config important_config most_important_config  # 2
 Customized configs or python literals can be defined via CLI environment also.
 
 ```shell
-python train.py config_1 config_2 lr=0.01 model.backbone.type=`ResNet50` model.backbone.embed_dims=128 model.backbone.depths=[2, 2, 18, 2]
+python train.py config_1 config_2 lr=0.01 model.backbone.type=%ResNet50% model.backbone.embed_dims=128 model.backbone.depths=[2, 2, 18, 2]
 ```
 
 For convenience, python literals defined via CLI always have the highest priorities. 
@@ -283,7 +302,8 @@ def main(config_1, config_2):
 ```
 
 Configs in `MultiScope` will be identified by their names in `@unified_scope` for this example. Note that 
-`@unified_scope.observe` is NOT supported, because it makes the order of priorities complicated much.
+`@unified_scope.observe` is NOT supported, because it makes the order of priorities complicated much. 
+Of course, you still can use `@scope_1.observe` and `@scope_2.observe` independently.
 
 ---
 
@@ -291,7 +311,7 @@ Configs in `MultiScope` will be identified by their names in `@unified_scope` fo
 Various types of configs can be imported from `json`, `yaml`, `py` and `xyz` formats and exported to 
 `json`, `yaml`, `py`, and `xyz` formats. 
 
-`xyz` is customized file system for our config and supports more readable formatting.
+`xyz` is customized file extension for our config and supports more readable formatting.
 
 Also, config can be imported from OpenMMLab configurations, but it is experimental feature yet.
 
@@ -432,6 +452,36 @@ lr: learning rate.
 
 Internally, `argparse` is treated as another scope, so note that its parameters are detached from that of your `scope`'s
 when manuals are printed out.
+
+#### Use Structural Hash to Classify Experiment Settings
+`get_structural_hash()` method in `ADict` makes hashed results of **structure** of configuration. If the keys and 
+the **types** of values are same, their structural hashes are same too. Note that `float` type is compatible with `int`
+type, but `int` type is not compatible with `float` type.
+
+```python
+from beacon.adict import ADict
+
+a1 = ADict(lr=0.1, rank=0, optimizer='AdamW') 
+a2 = ADict(lr=0.2, rank=1, optimizer='SGD') 
+b1 = ADict(lr=0.1, rank='0', optimizer='AdamW')
+b2 = ADict(lr=0.2, rank='1', optimizer='SGD')
+
+
+if __name__ == '__main__':
+    print(a1.get_structural_hash() == a2.get_structural_hash())  # True
+    print(a1.get_structural_hash() == b1.get_structural_hash())  # False
+    print(b1.get_structural_hash() == b2.get_structural_hash())  # True
+```
+
+The results will be:
+```shell
+True
+False
+True
+```
+
+This feature will be useful when you want to find if the setup of experiment is different with previous or not 
+automatically.
 
 ### Experimental Features
 #### Hyperparameter Optimization via Hyperband
