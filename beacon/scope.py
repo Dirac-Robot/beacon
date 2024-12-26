@@ -377,15 +377,6 @@ class Scope:
                 return func(*args, **kwargs)
         return inner
 
-    def switch(self, **switch_args):
-        def decorator(func):
-            @wraps(func)
-            def inner(*args, **kwargs):
-                if all(map(lambda kv: self.current_scope.config[kv[0]] == kv[1], switch_args.items())):
-                    return func(*args, **kwargs)
-            return inner
-        return decorator
-
     def __call__(self, func):
         return self.exec(func)
 
