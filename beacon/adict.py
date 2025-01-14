@@ -239,10 +239,11 @@ class ADict(Dict):
         if not self.frozen:
             super().__delitem__(key)
 
-    # def pop(self, name, default=None):
-    #     value = self.get(name, default)
-    #     self.__delitem__(name)
-    #     return value
+    def pop(self, name, default=None):
+        value = self.get(name, default)
+        if name in self:
+            self.__delitem__(name)
+        return value
 
     def raw(self, name, default=None):
         value = self.get(name, default)
