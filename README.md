@@ -263,7 +263,10 @@ pre-implemented decorators frustrate them. But the main motto of `beacon` is
 ```python
 scope = ...
 scope.activate()  # scope is activated
-scope.pause()  # scope is deactivated
+scope.deactivate()  # scope is deactivated
+
+with scope.pause():
+    ...  # works without scope
 ```
 
 #### Override
