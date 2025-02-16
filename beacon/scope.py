@@ -243,11 +243,6 @@ class Scope:
         else:
             return add_func_to_scope(self, field, priority, lazy, default, chain_with)
 
-    def set_default(self, field):
-        if field not in self.views:
-            raise ValueError(f'{field} is not registered.')
-        self.views[field].default = True
-
     def observe(self, field=None, config=None, priority=0, lazy=False, default=False, chain_with=None):
         # to enable replace from external codes
         return self.__class__.registry[self.name].add_to_screen(field, config, priority, lazy, default, chain_with)
