@@ -132,11 +132,26 @@ class ADict(Dict):
                     )
             mappings.update(mapping)
         self._frozen = False
+        self._accessed_keys = set()
         super().__init__(mappings, **kwargs)
 
     @property
     def frozen(self):
         return self._frozen
+
+    @property
+    def accessed_keys(self):
+        return self._accessed_keys
+
+    def get_minimal_config(self):
+        new_config = ADict()
+        for key in self.accessed_keys:
+            value = self.__getitem__(key)
+            if isinstance(value, self.__class__):
+                new_config[key] = value.get_minimal_config()
+            else:
+                new_config[key] = value
+        return new_config
 
     def __getitem__(self, names):
         if isinstance(names, str):
@@ -147,8 +162,10 @@ class ADict(Dict):
                 self._data[names] = value
             else:
                 raise KeyError(f'The key "{names}" does not exist.')
+            self._accessed_keys.add(names)
         else:
             value = [self.__getitem__(name) for name in names]
+            self._accessed_keys.update(names)
         if self.frozen:
             value = dcp(value)
         return value
@@ -440,7 +457,7 @@ class ADict(Dict):
         os.makedirs(dir_path, exist_ok=True)
         ext = os.path.splitext(path)[1].lower()
         if ext in ('.yml', '.yaml'):
-            with open(path, 'wb') as f:
+            with open(path, 'w') as f:
                 return yaml.dump(self.to_dict(), f, Dumper=yaml.Dumper, **kwargs)
         elif ext == '.json':
             with open(path, 'w') as f:
