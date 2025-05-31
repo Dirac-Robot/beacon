@@ -30,8 +30,8 @@ class GlobalParser:
                 for key, value in self.format_dict.items():
                     decoding_format_str += f'{key} -> {value}'
                     decoding_format_str += '\n'
-            prefix = self.format_dict.get(f'{self.value_type}-prefix', '')
-            postfix = self.format_dict.get(f'{self.value_type}-postfix', '')
+            prefix = self.format_dict.get(f'{self.value_type}_prefix', '')
+            postfix = self.format_dict.get(f'{self.value_type}_postfix', '')
             if self.value_type == 'key':
                 postfix = postfix or ':'
             elif self.value_type == 'index':
@@ -58,7 +58,8 @@ class GlobalParser:
             if child.value_type != 'value':
                 xyz_raw_str += '\n'+child.dumps(level+1)
             else:
-                xyz_raw_str += ' '+str(child.value)
+                child_value = f'"{child.value}"' if isinstance(child.value, str) else str(child.value)
+                xyz_raw_str += ' '+child_value
         xyz_raw_str = decoding_format_str+xyz_raw_str
         # If decoding format is empty, remove first line break
         if xyz_raw_str and xyz_raw_str[0] == '\n':
@@ -229,10 +230,10 @@ def load(path_or_file):
         lines = list(path_or_file.readlines())
     decoding_formats, lines = parse_lines(lines)
     format_dict = parse_format(decoding_formats)
-    root = convert_lines_to_tree(lines, format_dict)
+    root = convert_lines_to_tree(lines, format_dict=format_dict)
     return convert_tree_to_structure(root)
 
 
 if __name__ == "__main__":
-    x = dict(a=[], b={}, c=None, d=1)
-    print(dumps(x))
+    x = dict(a=[], b={}, c=None, d=1, e=[0, 1, '2'])
+    print(dumps(x, format_dict=dict(key_prefix='%', key_postfix='%', index_prefix='(', index_postfix=')')))
