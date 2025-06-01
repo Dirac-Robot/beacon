@@ -5,6 +5,7 @@ import sys
 import types
 from collections.abc import MutableMapping as GenericMapping
 
+import toml
 import yaml
 import os
 from copy import deepcopy as dcp
@@ -368,6 +369,9 @@ class ADict(Dict):
             if ext in ('.yml', '.yaml'):
                 with open(path, 'rb') as f:
                     return cls(yaml.load(f, Loader=yaml.FullLoader))
+            elif ext == '.toml':
+                with open(path, 'r') as f:
+                    return cls(toml.load(f))
             elif ext == '.json':
                 with open(path, 'r') as f:
                     return cls(json.load(f))
