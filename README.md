@@ -32,9 +32,13 @@ if __name__ == '__main__':
 - You can save or load directly, and it will automatically handle file extensions.
 - Supported file formats are: `json`, `yaml`, `yml`, `toml`, `xyz`.
 ```python
+from beacon.adict import ADict
 
+if __name__ == '__main__':
+    config = ADict().load('config.json')  # or ADict.from_file('config.json')
+    config.dump('config.json')
+    # Alternatively, you can use any other supported file extension.
 ```
-```python
 ### Scope
 Configurations can bother experiments when it is not carefully managed. Scope decreases potentials of mistakes on 
 setup experiments or reproducing previous results.
