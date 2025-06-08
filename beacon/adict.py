@@ -310,6 +310,20 @@ class ADict(Dict):
                 super().update(**kwargs)
         return self
 
+    @mutate_attribute
+    def update_if_not_exists(self, __m=None, recurrent=False, **kwargs):
+        if not self.frozen:
+            if __m is not None:
+                self.update_if_not_exists(**__m, recurrent=recurrent)
+            children = self.__class__()
+            for k, v in kwargs.items():
+                if k in self and isinstance(v, Mapping):
+                    self.__getitem__(k).update_if_not_exists(**v, recurrent=True)
+                elif k not in self:
+                    children[k] = v
+            super().update(**children)
+        return self
+
     def get_structural_mapping(self, key, value):
         if key is None:
             key = ""
@@ -478,3 +492,5 @@ class ADict(Dict):
             if src_key not in self._data:
                 raise KeyError(f'The key {src_key} does not exist.')
         self.__setitem__(tgt_keys, [self._data.pop(src_key) for src_key in src_keys])
+
+
