@@ -311,10 +311,10 @@ class ADict(Dict):
         return self
 
     @mutate_attribute
-    def update_if_not_exists(self, __m=None, recurrent=False, **kwargs):
+    def update_if_absent(self, __m=None, recurrent=False, **kwargs):
         if not self.frozen:
             if __m is not None:
-                self.update_if_not_exists(**__m, recurrent=recurrent)
+                self.update_if_absent(**__m, recurrent=recurrent)
             children = self.__class__()
             for k, v in kwargs.items():
                 if k in self and isinstance(v, Mapping):
@@ -477,6 +477,9 @@ class ADict(Dict):
         if ext in ('.yml', '.yaml'):
             with open(path, 'w') as f:
                 return yaml.dump(self.to_dict(), f, Dumper=yaml.Dumper, **kwargs)
+        elif ext == 'toml':
+            with open(path, 'w') as f:
+                return toml.dump(self.to_dict(), f, **kwargs)
         elif ext == '.json':
             with open(path, 'w') as f:
                 return json.dump(self.to_dict(), f, **kwargs)

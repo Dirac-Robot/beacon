@@ -3,8 +3,8 @@ Beacon is collections of useful tools to manage various experiments easily.
 
 ### ADict
 `ADict` is variation of `dict` type and used to configure experiments in `Scope`. It supports all methods in `dict` and
-some useful features like accessing items as attributes.
-
+#### Some Useful Features Compared to Python Native Dictionary
+- You can access items as attributes.
 ```python
 from beacon.adict import ADict
 
@@ -14,12 +14,27 @@ config = ADict(lr=0.1, optimizer='SGD')
 if __name__ == '__main__':
     print(config.lr == config['lr'])
 ```
-
 The results will be:
 ```shell
 True
 ```
+- You can update items only if they do not exist:
+```python
+from beacon.adict import ADict
 
+config = ADict(lr=0.1, optimizer='SGD')
+
+if __name__ == '__main__':
+    config.update_if_absent(lr=0.01, scheduler='CosineAnnealingLR')
+    print(config.lr == 0.01)  # False
+    print(config.scheduler == 'CosineAnnealingLR')  # True
+```
+- You can save or load directly, and it will automatically handle file extensions.
+- Supported file formats are: `json`, `yaml`, `yml`, `toml`, `xyz`.
+```python
+
+```
+```python
 ### Scope
 Configurations can bother experiments when it is not carefully managed. Scope decreases potentials of mistakes on 
 setup experiments or reproducing previous results.
