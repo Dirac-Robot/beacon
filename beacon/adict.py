@@ -318,7 +318,7 @@ class ADict(Dict):
             children = self.__class__()
             for k, v in kwargs.items():
                 if k in self and isinstance(v, Mapping):
-                    self.__getitem__(k).update_if_not_exists(**v, recurrent=True)
+                    self.__getitem__(k).update_if_absent(**v, recurrent=True)
                 elif k not in self:
                     children[k] = v
             super().update(**children)
