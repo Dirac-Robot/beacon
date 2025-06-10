@@ -388,11 +388,27 @@ class ADict(Dict):
                     return cls(toml.load(f))
             elif ext == '.json':
                 with open(path, 'r') as f:
-                    return cls(json.load(f))
+                    obj = json.load(f)
+                    if isinstance(obj, list):
+                        return [cls(item) for item in obj]
+                    else:
+                        return cls(obj)
+            elif ext == '.jsonl':
+                with open(path, 'r') as f:
+                    dict_list = json.load(f)
+                    return [cls(item) for item in dict_list]
             elif ext == '.xyz':
-                return cls(xyz.load(path))
+                obj = xyz.load(path)
+                if isinstance(obj, list):
+                    return [cls(item) for item in obj]
+                else:
+                    return cls(obj)
             elif ext == '.py':
-                return cls(cls.compile_from_file(path))
+                obj = cls.compile_from_file(path)
+                if isinstance(obj, list):
+                    return [cls(item) for item in obj]
+                else:
+                    return cls(obj)
             else:
                 raise ValueError(f'{ext} is not a valid file extension.')
         else:
