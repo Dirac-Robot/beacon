@@ -232,8 +232,3 @@ def load(path_or_file):
     format_dict = parse_format(decoding_formats)
     root = convert_lines_to_tree(lines, format_dict=format_dict)
     return convert_tree_to_structure(root)
-
-
-if __name__ == "__main__":
-    x = [dict(a=[], b={}, c=None, d=1, e=[0, 1, '2'])]
-    print(dumps(x, format_dict=dict(key_prefix='%', key_postfix='%', index_prefix='(', index_postfix=')')))
