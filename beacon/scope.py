@@ -293,11 +293,11 @@ class Scope:
         for literal in literals:
             if literal in self.views:
                 view_info = self.views[literal]
-                if view_info.lazy:
+                if view_info.lazy and literal not in self.screen.lazy_views:
                     if view_info.chain_with is not None:
                         self.assign(view_info.chain_with)
                     self.screen.lazy_views.append(literal)
-                else:
+                elif not view_info.lazy and literal not in self.screen.views:
                     if view_info.chain_with is not None:
                         self.assign(view_info.chain_with)
                     self.screen.views.append(literal)
